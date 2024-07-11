@@ -1,0 +1,67 @@
+{% set name = "azure-monitor-opentelemetry" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: {{ environ.get('AZURESDK_CONDA_VERSION', '0.0.0') }}
+
+source:
+  url: {{ environ.get('MONITOR_SOURCE_DISTRIBUTION', '') }}
+
+build:
+  noarch: python
+  number: 0
+  script: "{{ PYTHON }} -m pip install . -vv"
+
+requirements:
+  host:
+    - azure-core >={{ environ.get('AZURESDK_CONDA_VERSION', '0.0.0') }}
+    - azure-identity >={{ environ.get('AZURESDK_CONDA_VERSION', '0.0.0') }}
+    - msrest >={{ environ.get('AZURESDK_CONDA_VERSION', '0.0.0') }}
+    - python    
+    - azure-core
+    - azure-core-tracing-opentelemetry
+    - azure-monitor-opentelemetry-exporter
+    - opentelemetry-instrumentation-django
+    - opentelemetry-instrumentation-fastapi
+    - opentelemetry-instrumentation-flask
+    - opentelemetry-instrumentation-psycopg2
+    - opentelemetry-instrumentation-requests 
+    - opentelemetry-instrumentation-urllib
+    - opentelemetry-instrumentation-urllib3
+    - opentelemetry-resource-detector-azure, opentelemetry-sdk
+  run:
+    - azure-core >={{ environ.get('AZURESDK_CONDA_VERSION', '0.0.0') }}
+    - azure-identity >={{ environ.get('AZURESDK_CONDA_VERSION', '0.0.0') }}
+    - msrest >={{ environ.get('AZURESDK_CONDA_VERSION', '0.0.0') }}
+    - python    
+    - azure-core
+    - azure-core-tracing-opentelemetry
+    - azure-monitor-opentelemetry-exporter
+    - opentelemetry-instrumentation-django
+    - opentelemetry-instrumentation-fastapi
+    - opentelemetry-instrumentation-flask
+    - opentelemetry-instrumentation-psycopg2
+    - opentelemetry-instrumentation-requests 
+    - opentelemetry-instrumentation-urllib
+    - opentelemetry-instrumentation-urllib3
+    - opentelemetry-resource-detector-azure, opentelemetry-sdk
+
+test:
+  imports:
+    - azure.monitor.opentelemetry    
+
+about:
+  home: "https://github.com/Azure/azure-sdk-for-python/tree/main/sdk/monitor/azure-monitor-opentelemetry"
+  license: MIT
+  license_family: MIT
+  license_file: 
+  summary: "Microsoft Azure Monitor Opentelemetry Distro client library for Python"
+  description: |
+    The Azure Monitor Distro of Opentelemetry Python is a "one-stop-shop" telemetry solution, requiring only one line of code to instrument your application. The distro captures telemetry via OpenTelemetry instrumentations and reports telemetry to Azure Monitor via the Azure Monitor exporters.
+    Please see https://aka.ms/azsdk/conda/releases/query for version details.
+  doc_url: 
+  dev_url: 
+
+extra:
+  recipe-maintainers:
+    - sudivate
