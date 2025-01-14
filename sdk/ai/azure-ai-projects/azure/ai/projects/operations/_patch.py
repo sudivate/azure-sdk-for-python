@@ -570,7 +570,7 @@ def _configure_logging(log_exporter: Any) -> None:
         logger.warning("Failed to configure OpenTelemetry logging.", exc_info=ex)
 
 
-def _enable_telemetry(destination: Union[TextIO, str, None], **kwargs) -> None:  # pylint: disable=unused-argument
+def _enable_telemetry(destination: Union[TextIO, str, None],language_client, **kwargs) -> None:  # pylint: disable=unused-argument
     """Enable tracing and logging to console (sys.stdout), or to an OpenTelemetry Protocol (OTLP) endpoint.
 
     :param destination: `sys.stdout` to print telemetry to console or a string holding the
@@ -596,10 +596,18 @@ def _enable_telemetry(destination: Union[TextIO, str, None], **kwargs) -> None: 
             + "Please install it using 'pip install azure-core-tracing-opentelemetry'"
         )
 
+    if language_client is not None:
+       try:
+          from azure.ai.textanalytics import TextAnalyticsClient
+       except ModuleNotFoundError:         
+            logger.warning(
+            "Could not import `azure.ai.textanalytics` since `azure-ai-textanalytics` is not installed"
+        )    
+
     try:
         from azure.ai.inference.tracing import AIInferenceInstrumentor  # type: ignore
 
-        inference_instrumentor = AIInferenceInstrumentor()
+        inference_instrumentor = AIInferenceInstrumentor(language_client=language_client)
         if not inference_instrumentor.is_instrumented():
             inference_instrumentor.instrument()
     except ModuleNotFoundError:
@@ -697,7 +705,7 @@ class TelemetryOperations(TelemetryOperationsGenerated):
             SDK to export traces.
         :paramtype destination: Union[TextIO, str, None]
         """
-        _enable_telemetry(destination=destination, **kwargs)
+        _enable_telemetry(destination=destination,language_client=language_client, **kwargs)
 
 
 class AgentsOperations(AgentsOperationsGenerated):

@@ -12,6 +12,7 @@ import os
 from time import time_ns
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Union
 from urllib.parse import urlparse
+from azure.ai.textanalytics import TextAnalyticsClient
 
 # pylint: disable = no-name-in-module
 from azure.core import CaseInsensitiveEnumMeta  # type: ignore
@@ -54,7 +55,7 @@ class AIInferenceInstrumentor:
 
     """
 
-    def __init__(self):
+    def __init__(self, language_client: TextAnalyticsClient):
         if not _tracing_library_available:
             raise ModuleNotFoundError(
                 "Azure Core Tracing Opentelemetry is not installed. "
@@ -62,7 +63,8 @@ class AIInferenceInstrumentor:
             )
         # In the future we could support different versions from the same library
         # and have a parameter that specifies the version to use.
-        self._impl = _AIInferenceInstrumentorPreview()
+        self._impl = _AIInferenceInstrumentorPreview(language_client)
+        self._impl.language_client = language_client
 
     def instrument(self, enable_content_recording: Optional[bool] = None) -> None:
         """
@@ -123,6 +125,9 @@ class _AIInferenceInstrumentorPreview:
     This class allows enabling or disabling tracing for AI Inference.
     and provides functionality to check whether instrumentation is active.
     """
+    
+    def __init__(self, language_client: TextAnalyticsClient):
+        self.language_client = language_client
 
     def _str_to_bool(self, s):
         if s is None:
@@ -203,6 +208,11 @@ class _AIInferenceInstrumentorPreview:
                 pass
 
             if message.get("role"):
+                name = f"gen_ai.{message.get('role')}.message"
+                if name == "gen_ai.user.message":
+                    content = message.get("content")
+                    redacted_content = self._redact_pii([content])
+                    message["content"] = redacted_content     
                 timestamp = self._record_event(
                     span,
                     f"gen_ai.{message.get('role')}.message",
@@ -853,3 +863,22 @@ class _AIInferenceInstrumentorPreview:
         :rtype bool
         """
         return _trace_inference_content
+
+
+    def _redact_pii(self, message: 'list[str]'):
+        """
+        This function redacts the PII information from the message
+        :param message: The message to be redacted
+        :type message: str
+        :param client: The TextAnalyticsClient object
+        :type client: TextAnalyticsClient
+        :return: The redacted message
+        :rtype: str
+        """        
+        try:
+            response = self.language_client.recognize_pii_entities(message, language="en")
+            redacted_message = response[0].redacted_text
+        except Exception as e:
+            logging.error(f"An error occurred while redacting PII: {e}")
+            redacted_message = message  # Return the original message if an error occurs
+        return redacted_message
